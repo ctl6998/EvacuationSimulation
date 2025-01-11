@@ -23,8 +23,8 @@ global {
     
     // Parameters for batch experiments
     string awareness_strategy <- "random" among: ["random", "furthest", "closest"];
-    int initial_population <- 1000 min: 500 max: 2000 step: 500;
-    float alert_duration <- 3600.0 min: 1800.0 max: 7200.0;  // Alert time in seconds
+    int initial_population <- 1000 min: 500 max: 10000 step: 500;
+    float alert_duration <- 1800.0 min: 100.0 max: 3600.0 step: 100;  // Alert time in seconds
     
     // Statistics
     float total_evacuation_time;
@@ -115,10 +115,13 @@ global {
             total_evacuation_time <- cycle * step;
             total_road_time <- mean(inhabitant collect each.road_time);
             write "Simulation finished - Strategy: " + awareness_strategy;
-            write "Evacuation time: " + total_evacuation_time;
+            
+
             write "Average time on roads: " + total_road_time;
             write "Efficiency: " + total_evacuation_time/total_road_time;
             write "People evacuated/people awared: " + nb_evacuee + "/" + length(inhabitant where each.is_aware);
+            
+            do pause;
         }
     }
 }
@@ -218,8 +221,8 @@ species red_river {
 
 experiment single_run type: gui {
     parameter "Awareness Strategy" var: awareness_strategy <- "random" among: ["random", "furthest", "closest"];
-    parameter "Initial Population" var: initial_population <- 1000 min: 500 max: 2000 step: 500;
-    parameter "Alert Duration (seconds)" var: alert_duration <- 3600.0 min: 1800.0 max: 7200.0;
+    parameter "Initial Population" var: initial_population <- 1000 min: 500 max: 10000 step: 500;
+    parameter "Alert Duration (seconds)" var: alert_duration <- 1800.0 min: 1800.0 max: 7200.0;
     
     output {
         display map type: 3d {
@@ -227,6 +230,24 @@ experiment single_run type: gui {
             species road;
             species inhabitant;
             species red_river;
+        }
+        
+                // Information spread chart
+        display "Information Spread Chart" {
+            chart "Information Spread Over Time" type: series {
+                data "Aware People" value: inhabitant count (each.is_aware) color: #red;
+                data "Evacuated People" value: inhabitant count (each.is_evacuated) color: #green;
+                data "Unaware People" value: inhabitant count (!each.is_aware) color: #blue;
+            }
+        }
+        
+        // Population statistics
+        display "Population Statistics" {
+            chart "Population Distribution" type: pie {
+                data "Aware (Not Evacuated)" value: (inhabitant count (each.is_aware and !each.is_evacuated)) color: #red;
+                data "Evacuated" value: (inhabitant count (each.is_evacuated)) color: #green;
+                data "Unaware" value: (inhabitant count (!each.is_aware)) color: #blue;
+            }
         }
         
         monitor "Number of evacuees" value: nb_evacuee;
@@ -238,8 +259,8 @@ experiment single_run type: gui {
 experiment batch_comparison type: batch repeat: 5 keep_seed: true until: simulation_finished {
     // Parameters
     parameter "Awareness Strategy" var: awareness_strategy <- "random" among: ["random", "furthest", "closest"];
-    parameter "Initial Population" var: initial_population <- 1000 among: [500, 1000, 1500, 2000];
-    parameter "Alert Duration (seconds)" var: alert_duration among: [1800.0, 3600.0, 7200.0];
+    parameter "Initial Population" var: initial_population <- 1000 among: [1000, 1500, 2000, 5000, 10000];
+    parameter "Alert Duration (seconds)" var: alert_duration <- 1800.0 min: 100.0 max: 3600.0 step: 100;
 
     method exploration;
 

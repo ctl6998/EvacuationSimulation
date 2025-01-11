@@ -19,6 +19,8 @@ global {
     building shelter;
     int nb_evacuee <- 0;
     bool simulation_finished <- false;
+    
+    float total_evacuation_time;
 
     
     init {
@@ -51,7 +53,9 @@ global {
     reflex check_end when: !simulation_finished {
         if(inhabitant all_match (each.is_evacuated or !each.is_aware)) {
             simulation_finished <- true;
+            total_evacuation_time <- cycle * step;
             write "Simulation finished at cycle " + cycle;
+            write "Evacuation time: " + total_evacuation_time;
         }
     }
 }
